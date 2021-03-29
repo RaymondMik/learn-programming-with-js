@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Document</title>
+   <style>
+      body {
+         font-family: sans-serif;
+         background-color: #1e1f26;
+         color: #e8e8e8;
+      }
+
+      .gameContainer {
+         width: 600px;
+         height: auto;
+         margin: 0 auto;
+      }
+
+      .gameHeader {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 20px 0;
+         margin: 20px 0 30px 0;
+         font-size: 1.1rem;
+         font-weight: bold;
+      }
+
+      .row {
+         display: flex;
+         align-content: center;
+         justify-content: center;
+      }
+
+      .row:nth-child(1) > .square,
+      .row:nth-child(2) > .square {
+         border-bottom: 10px solid #e8e8e8;
+      }
+
+      .square {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         height: 200px;
+         width: 200px;
+         cursor: pointer;
+      }
+
+      .square:nth-child(1),
+      .square:nth-child(2) {
+         border-right: 10px solid #e8e8e8;
+      }
+
+      .square.win {
+         background-color: #17a2b8;
+      }
+
+      #restartGame {
+         display: block;
+         padding: 7px 15px;
+         cursor: pointer;
+      }
+
+      .player-tag {
+         font-size: 90px;
+         font-weight: bold;
+      }
+   </style>
+</head>
+<body>
+   <div class="gameContainer">
+      <div class="gameHeader">
+        <div id="gameCurrentPlayer"></div>
+        <div id="gameWinner"></div>
+        <button id="restartGame">Restart game</button>
+      </div>
+      <div id="gameBoard">
+        <div class="row">
+          <div id="0" class="square"></div>
+          <div id="1" class="square"></div>
+          <div id="2" class="square"></div>
+        </div>
+        <div class="row">
+          <div id="3" class="square"></div>
+          <div id="4" class="square"></div>
+          <div id="5" class="square"></div>
+        </div>
+        <div class="row">
+          <div id="6" class="square"></div>
+          <div id="7" class="square"></div>
+          <div id="8" class="square"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Define game constants
+      const playerOne = "X";
+      const playerTwo = "O";
+      const gameCurrentPlayerEl = document.getElementById("gameCurrentPlayer");
+      const gameWinnerEl = document.getElementById("gameWinner");
+      const restartGameBtn = document.getElementById("restartGame");
+
+      // Define initial state of the game
+      let currentPlayer = playerOne;
+      let winner = null;
+
+      // Track game results
+      let gameTracking = {
+         [playerOne]: [],
+         [playerTwo]: []
+      };
+
+      // Render current player
+      gameCurrentPlayerEl.innerHTML = `<p>Now playing: ${currentPlayer}</p>`;
+
+      // Define what "Restart game" button shall do when users click on it
+      restartGameBtn.addEventListener("click", () => {
+         document.querySelectorAll(".square").forEach((square) => {
+            winner = null;
+            gameTracking[playerOne] = [];
+            gameTracking[playerTwo] = [];
+            square.innerHTML = "";
+            currentPlayer = playerOne;
+
+            gameCurrentPlayerEl.innerHTML = `<p>Now playing: ${currentPlayer}</p>`;
+            gameWinnerEl.innerHTML = "";
+            document.getElementById(square.id).classList.remove("win");
+         });
+      });
+
+      // Define what each "square" element shall do when users click on it
+      document.querySelectorAll(".square").forEach((square) => {
+         square.addEventListener("click", () => {
+            if (square.innerHTML === "") {
+               gameTracking[currentPlayer].push(Number(square.id));
+
+               if (currentPlayer === playerOne) {
+               square.innerHTML = `<span class="player-tag">${currentPlayer}</span>`;
+               currentPlayer = "O";
+               determineWinner(gameTracking);
+               } else {
+               square.innerHTML = `<span class="player-tag">${currentPlayer}</span>`;
+               currentPlayer = "X";
+               determineWinner(gameTracking);
+               }
+            }
+
+            gameCurrentPlayerEl.innerHTML = `<p>Now playing: ${currentPlayer}</p>`;
+
+            return;
+         });
+      });
+
+      // Find the winning squares in the state, and return them as an array
+      const getWinningSquares = (arr) => {
+      // patterns: [0 1 2] [3 4 5] [6 7 8] [0 3 6] [1 4 7] [2 5 8] [0 4 8] [2 4 6]
+      switch (true) {
+         case arr.includes(0) && arr.includes(1) && arr.includes(2):
+            return [0, 1, 2];
+         case arr.includes(3) && arr.includes(4) && arr.includes(5):
+            return [3, 4, 5];
+         case arr.includes(6) && arr.includes(7) && arr.includes(8):
+            return [6, 7, 8];
+         case arr.includes(0) && arr.includes(3) && arr.includes(6):
+            return [0, 3, 6];
+         case arr.includes(1) && arr.includes(4) && arr.includes(7):
+            return [1, 4, 7];
+         case arr.includes(2) && arr.includes(5) && arr.includes(8):
+            return [2, 5, 8];
+         case arr.includes(0) && arr.includes(4) && arr.includes(8):
+            return [0, 4, 8];
+         case arr.includes(2) && arr.includes(4) && arr.includes(6):
+            return [2, 4, 6];
+         default:
+            return null;
+      }
+      };
+
+      // Determine who won the game, and manipulate the UI accordingly
+      const determineWinner = (tracking) => {
+      const renderWinner = (player) => {
+         if (tracking[player].length >= 3 && !winner) {
+            const winningSquares = getWinningSquares(tracking[player]);
+            if (winningSquares) {
+            winner = player;
+            winningSquares.forEach((id) => {
+               document.getElementById(id).classList.add("win");
+            });
+            gameWinnerEl.innerHTML = `<p>Winner is: ${winner}</p>`;
+            }
+         }
+      };
+
+      renderWinner(playerOne);
+      renderWinner(playerTwo);
+      };
+    </script>
+</body>
+</html>
